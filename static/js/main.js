@@ -85,4 +85,4 @@ document.addEventListener("DOMContentLoaded", () => {
         messages.innerHTML = "";
         updateHistory();
     });
-});
+}); 
