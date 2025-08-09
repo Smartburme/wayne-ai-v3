@@ -1,6 +1,24 @@
 # wayne-ai-v3
-
-
+# Structure 
+```
+wayne-ai-v3/
+│
+├── index.html               # Loader
+├── pages/
+│   └── main.html            # Chat UI
+├── static/
+│   ├── css/style.css
+│   ├── js/main.js           # UI logic
+│   └── js/api.js            # Calls Python backend
+├── backend/                 # Python backend
+│   ├── app.py               # Flask/FastAPI
+│   ├── requirements.txt
+│   ├── services/
+│   │   └── chat_service.py
+│   └── config.py
+├── .github/workflows/deploy.yml
+└── README.md
+```
 ဖိုင် ၁ — index.html (loader / entry)
 ```
 <!DOCTYPE html>
