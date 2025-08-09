@@ -3,7 +3,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const closeMenuBtn = document.getElementById("closeMenuBtn");
     const sideMenu = document.getElementById("sideMenu");
     const overlay = document.getElementById("overlay");
-
     const sendBtn = document.getElementById("sendBtn");
     const input = document.getElementById("input");
     const messages = document.getElementById("messages");
@@ -13,15 +12,12 @@ document.addEventListener("DOMContentLoaded", () => {
     let chatHistory = [];
 
     // Menu open/close
-    menuBtn.addEventListener("click", () => {
-        sideMenu.classList.add("active");
-        overlay.classList.add("active");
-    });
-    closeMenuBtn.addEventListener("click", closeMenu);
-    overlay.addEventListener("click", closeMenu);
-    function closeMenu() {
-        sideMenu.classList.remove("active");
-        overlay.classList.remove("active");
+    menuBtn.addEventListener("click", () => toggleMenu(true));
+    closeMenuBtn.addEventListener("click", () => toggleMenu(false));
+    overlay.addEventListener("click", () => toggleMenu(false));
+    function toggleMenu(show) {
+        sideMenu.classList.toggle("active", show);
+        overlay.classList.toggle("active", show);
     }
 
     // Send message
@@ -42,13 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
         updateHistory();
 
         input.value = "";
-        // Simulate bot reply
-        setTimeout(() => {
-            const botReply = "WAYNE AI: " + text.split("").reverse().join("");
-            appendMessage(botReply, "bot");
-            chatHistory.push({ role: "bot", content: botReply });
-            updateHistory();
-        }, 500);
+        simulateBotReply(text);
     }
 
     function appendMessage(text, sender) {
@@ -62,14 +52,31 @@ document.addEventListener("DOMContentLoaded", () => {
     function updateHistory() {
         historyList.innerHTML = "";
         if (chatHistory.length === 0) {
-            historyList.innerHTML = `<p class="empty-history">No history yet.</p>`;
+            historyList.innerHTML = `<p>No history yet.</p>`;
             return;
         }
-        chatHistory.forEach((item, idx) => {
+        chatHistory.forEach(item => {
             const p = document.createElement("p");
             p.textContent = `${item.role.toUpperCase()}: ${item.content}`;
             historyList.appendChild(p);
         });
+    }
+
+    function simulateBotReply(userText) {
+        // Bot typing effect
+        const botTyping = document.createElement("div");
+        botTyping.className = "message bot";
+        botTyping.textContent = "WAYNE AI is typing...";
+        messages.appendChild(botTyping);
+        messages.scrollTop = messages.scrollHeight;
+
+        setTimeout(() => {
+            botTyping.remove();
+            const reply = "🤖 " + userText.split("").reverse().join("");
+            appendMessage(reply, "bot");
+            chatHistory.push({ role: "bot", content: reply });
+            updateHistory();
+        }, 800);
     }
 
     // Clear history
