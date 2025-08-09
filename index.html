@@ -1,22 +1,71 @@
 <!DOCTYPE html>
 <html lang="my">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>WAYNE AI • Loading</title>
-  <link rel="stylesheet" href="static/css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WAYNE AI • Loading...</title>
+  <style>
+    /* Fullscreen Center */
+    body, html {
+      margin: 0; padding: 0;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #141E30, #243B55);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: white;
+      user-select: none;
+    }
+
+    /* Loader Dots */
+    .loader {
+      display: flex;
+      gap: 12px;
+    }
+    .loader > div {
+      width: 16px;
+      height: 16px;
+      background: #56ab2f;
+      border-radius: 50%;
+      animation: bounce 0.6s infinite alternate;
+    }
+    .loader > div:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .loader > div:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes bounce {
+      to { transform: translateY(-18px); }
+    }
+
+    /* Loader Text */
+    .loading-text {
+      margin-top: 30px;
+      font-size: 1.2rem;
+      letter-spacing: 2px;
+      text-align: center;
+      color: #a8e063;
+      text-shadow: 0 0 8px #a8e063aa;
+      font-weight: 600;
+    }
+  </style>
 </head>
-<body class="bg">
-  <div class="loader-wrap">
-    <div class="logo-glass">
-      <img src="static/images/icon.png" alt="wayne" class="logo">
-      <h1>WAYNE AI</h1>
-    </div>
+<body>
+  <div>
     <div class="loader">
-      <span></span><span></span><span></span>
+      <div></div><div></div><div></div>
     </div>
-    <p class="sub">Loading experience… ready in a moment</p>
-    <a class="enter-btn" href="pages/main.html">Enter</a>
+    <div class="loading-text">WAYNE AI Loading...</div>
   </div>
+
+  <script>
+    // Auto redirect after 2.5 seconds to main.html
+    setTimeout(() => {
+      window.location.href = "pages/main.html";
+    }, 2500);
+  </script>
 </body>
 </html>
