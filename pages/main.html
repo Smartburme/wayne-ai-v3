@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WAYNE AI • Chat</title>
+  <link rel="stylesheet" href="../static/css/style.css">
+</head>
+<body class="bg">
+  <header class="titlebar">
+    <div class="left">
+      <button id="menuBtn" class="icon-btn">ミ</button>
+    </div>
+    <div class="title">WAYNE AI</div>
+    <div class="right">
+      <img src="../static/images/icon.png" class="avatar" alt="icon">
+    </div>
+  </header>
+
+  <main class="chat-area" id="chatArea">
+    <div class="messages" id="messages"></div>
+    <div class="composer">
+      <select id="modeSelect" class="mode">
+        <option value="text">Text</option>
+        <option value="image">Image</option>
+        <option value="code">Code</option>
+      </select>
+      <textarea id="input" placeholder="Type a message..." rows="1"></textarea>
+      <button id="sendBtn" class="send">ᐷ</button>
+    </div>
+  </main>
+
+  <script src="../static/js/api.js"></script>
+  <script src="../static/js/main.js"></script>
+</body>
+</html>
