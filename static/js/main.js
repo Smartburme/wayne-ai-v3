@@ -153,15 +153,18 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const generateBotResponse = (userText) => {
-    // Replace with actual AI integration or more sophisticated logic
-    const responses = [
-      `I understand you said: "${userText}". Can you tell me more?`,
-      `Interesting point about "${userText}". What else is on your mind?`,
-      `🤖 ${userText.split("").reverse().join("")}`,
-      `Thanks for sharing "${userText}". How can I help you further?`
-    ];
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
+  // အသုံးပြုသူရဲ့စာကြောင်းကို အခြေခံပြီး သင့်တော်တဲ့အဖြေတွေထုတ်ပေးမယ်
+  const responses = [
+    `ကျေးဇူးပြု၍ "${userText}" အကြောင်း နည်းနည်းထပ်ရှင်းပြပေးပါဦး။`,
+    `"${userText}" နဲ့ပတ်သက်ပြီး စိတ်ဝင်စားစရာကောင်းပါတယ်။`,
+    `ဒီမေးခွန်းအတွက် အဖြေက - "${userText.split('').reverse().join('')}" (ပြောင်းပြန်လှန်ကြည့်ထားတာပါ)`,
+    `"${userText}" ဆိုတာ သိချင်နေတဲ့အကြောင်းအရာလား? ကျွန်တော်ကူညီနိုင်ပါတယ်။`,
+    `ကျွန်တော်နားလည်တာက "${userText}" ဆိုတာပါ။ တခြားမေးစရာရှိသေးလား?`
+  ];
+
+  // ကျပန်းအဖြေတစ်ခုကိုရွေးချယ်
+  return responses[Math.floor(Math.random() * responses.length)];
+};
 
   // ----------- Navigation Handlers -----------
   const setupNavigationListeners = () => {
