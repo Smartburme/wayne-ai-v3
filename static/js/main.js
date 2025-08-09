@@ -11,61 +11,63 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let chatHistory = [];
 
-  // Menu open/close
+  // ----------- Menu Controls -----------
+  const toggleMenu = (show) => {
+    sideMenu.classList.toggle("active", show);
+    overlay.classList.toggle("active", show);
+  };
   menuBtn.addEventListener("click", () => toggleMenu(true));
   closeMenuBtn.addEventListener("click", () => toggleMenu(false));
   overlay.addEventListener("click", () => toggleMenu(false));
-  function toggleMenu(show) {
-    sideMenu.classList.toggle("active", show);
-    overlay.classList.toggle("active", show);
-  }
 
-  // Send message
+  // ----------- Send Message Handler -----------
+  const sendMessage = () => {
+    const text = input.value.trim();
+    if (!text) return;
+
+    addMessage(text, "user");
+    chatHistory.push({ role: "user", content: text });
+    updateHistory();
+
+    input.value = "";
+    simulateBotReply(text);
+  };
+
   sendBtn.addEventListener("click", sendMessage);
-  input.addEventListener("keypress", (e) => {
+  input.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
   });
 
-  function sendMessage() {
-    const text = input.value.trim();
-    if (!text) return;
-
-    appendMessage(text, "user");
-    chatHistory.push({ role: "user", content: text });
-    updateHistory();
-
-    input.value = "";
-    simulateBotReply(text);
-  }
-
-  function appendMessage(text, sender) {
+  // ----------- Message Rendering -----------
+  const addMessage = (text, sender) => {
     const msg = document.createElement("div");
-    msg.className = `message ${sender}`;
+    msg.classList.add("message", sender);
     msg.textContent = text;
     messages.appendChild(msg);
     messages.scrollTop = messages.scrollHeight;
-  }
+  };
 
-  function updateHistory() {
+  // ----------- Chat History UI Update -----------
+  const updateHistory = () => {
     historyList.innerHTML = "";
     if (chatHistory.length === 0) {
-      historyList.innerHTML = `<p>No history yet.</p>`;
+      historyList.innerHTML = "<p>No history yet.</p>";
       return;
     }
-    chatHistory.forEach(item => {
+    chatHistory.forEach(({ role, content }) => {
       const p = document.createElement("p");
-      p.textContent = `${item.role.toUpperCase()}: ${item.content}`;
+      p.textContent = `${role.toUpperCase()}: ${content}`;
       historyList.appendChild(p);
     });
-  }
+  };
 
-  function simulateBotReply(userText) {
-    // Bot typing effect
+  // ----------- Simulate Bot Reply -----------
+  const simulateBotReply = (userText) => {
     const botTyping = document.createElement("div");
-    botTyping.className = "message bot";
+    botTyping.classList.add("message", "bot");
     botTyping.textContent = "WAYNE AI is typing...";
     messages.appendChild(botTyping);
     messages.scrollTop = messages.scrollHeight;
@@ -73,30 +75,26 @@ document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => {
       botTyping.remove();
       const reply = "🤖 " + userText.split("").reverse().join("");
-      appendMessage(reply, "bot");
+      addMessage(reply, "bot");
       chatHistory.push({ role: "bot", content: reply });
       updateHistory();
     }, 800);
-  }
+  };
 
-  // Clear history
+  // ----------- Clear History -----------
   clearHistoryBtn.addEventListener("click", () => {
     chatHistory = [];
     messages.innerHTML = "";
     updateHistory();
   });
 
-  // Menu action links: Settings & About
-  document.querySelectorAll(".menu-action").forEach(btn => {
+  // ----------- Menu Action Links -----------
+  document.querySelectorAll(".menu-action").forEach((btn) => {
     const text = btn.textContent.toLowerCase();
     if (text.includes("setting")) {
-      btn.addEventListener("click", () => {
-        window.location.href = "setting.html";
-      });
+      btn.addEventListener("click", () => (window.location.href = "setting.html"));
     } else if (text.includes("about")) {
-      btn.addEventListener("click", () => {
-        window.location.href = "about.html";
-      });
+      btn.addEventListener("click", () => (window.location.href = "about.html"));
     }
   });
 });
