@@ -1,100 +1,209 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const menuBtn = document.getElementById("menuBtn");
-  const closeMenuBtn = document.getElementById("closeMenuBtn");
-  const sideMenu = document.getElementById("sideMenu");
-  const overlay = document.getElementById("overlay");
-  const sendBtn = document.getElementById("sendBtn");
-  const input = document.getElementById("input");
-  const messages = document.getElementById("messages");
-  const historyList = document.getElementById("historyList");
-  const clearHistoryBtn = document.getElementById("clearHistoryBtn");
+  // DOM Elements
+  const elements = {
+    menuBtn: document.getElementById("menuBtn"),
+    closeMenuBtn: document.getElementById("closeMenuBtn"),
+    sideMenu: document.getElementById("sideMenu"),
+    overlay: document.getElementById("overlay"),
+    sendBtn: document.getElementById("sendBtn"),
+    input: document.getElementById("input"),
+    messages: document.getElementById("messages"),
+    historyList: document.getElementById("historyList"),
+    clearHistoryBtn: document.getElementById("clearHistoryBtn")
+  };
 
-  let chatHistory = [];
+  // State
+  let chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
+
+  // ----------- Utility Functions -----------
+  const saveToLocalStorage = () => {
+    localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
+  };
+
+  const scrollToBottom = () => {
+    elements.messages.scrollTop = elements.messages.scrollHeight;
+  };
 
   // ----------- Menu Controls -----------
   const toggleMenu = (show) => {
-    sideMenu.classList.toggle("active", show);
-    overlay.classList.toggle("active", show);
+    elements.sideMenu.classList.toggle("active", show);
+    elements.overlay.classList.toggle("active", show);
+    document.body.style.overflow = show ? 'hidden' : '';
   };
-  menuBtn.addEventListener("click", () => toggleMenu(true));
-  closeMenuBtn.addEventListener("click", () => toggleMenu(false));
-  overlay.addEventListener("click", () => toggleMenu(false));
 
-  // ----------- Send Message Handler -----------
+  const setupMenuListeners = () => {
+    elements.menuBtn.addEventListener("click", () => toggleMenu(true));
+    elements.closeMenuBtn.addEventListener("click", () => toggleMenu(false));
+    elements.overlay.addEventListener("click", () => toggleMenu(false));
+  };
+
+  // ----------- Message Handling -----------
+  const addMessage = (text, sender) => {
+    const messageElement = document.createElement("div");
+    messageElement.classList.add("message", sender);
+    
+    // Add sender label for better UX
+    const senderLabel = document.createElement("span");
+    senderLabel.classList.add("sender-label");
+    senderLabel.textContent = sender === 'user' ? 'You:' : 'WAYNE AI:';
+    
+    const messageContent = document.createElement("div");
+    messageContent.classList.add("message-content");
+    messageContent.textContent = text;
+    
+    messageElement.appendChild(senderLabel);
+    messageElement.appendChild(messageContent);
+    elements.messages.appendChild(messageElement);
+    scrollToBottom();
+  };
+
   const sendMessage = () => {
-    const text = input.value.trim();
+    const text = elements.input.value.trim();
     if (!text) return;
 
     addMessage(text, "user");
     chatHistory.push({ role: "user", content: text });
     updateHistory();
+    saveToLocalStorage();
 
-    input.value = "";
+    elements.input.value = "";
     simulateBotReply(text);
   };
 
-  sendBtn.addEventListener("click", sendMessage);
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  });
-
-  // ----------- Message Rendering -----------
-  const addMessage = (text, sender) => {
-    const msg = document.createElement("div");
-    msg.classList.add("message", sender);
-    msg.textContent = text;
-    messages.appendChild(msg);
-    messages.scrollTop = messages.scrollHeight;
-  };
-
-  // ----------- Chat History UI Update -----------
-  const updateHistory = () => {
-    historyList.innerHTML = "";
-    if (chatHistory.length === 0) {
-      historyList.innerHTML = "<p>No history yet.</p>";
-      return;
-    }
-    chatHistory.forEach(({ role, content }) => {
-      const p = document.createElement("p");
-      p.textContent = `${role.toUpperCase()}: ${content}`;
-      historyList.appendChild(p);
+  const setupMessageListeners = () => {
+    elements.sendBtn.addEventListener("click", sendMessage);
+    elements.input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
     });
   };
 
-  // ----------- Simulate Bot Reply -----------
+  // ----------- Chat History Management -----------
+  const updateHistory = () => {
+    elements.historyList.innerHTML = "";
+    
+    if (chatHistory.length === 0) {
+      elements.historyList.innerHTML = "<p class='empty-history'>No history yet. Start chatting!</p>";
+      return;
+    }
+
+    // Group messages by conversation (optional enhancement)
+    const historyItem = document.createElement("div");
+    historyItem.className = "history-item";
+    
+    chatHistory.forEach(({ role, content }, index) => {
+      const messageElement = document.createElement("p");
+      messageElement.className = `history-message ${role}`;
+      messageElement.textContent = `${role === 'user' ? 'You:' : 'AI:'} ${content}`;
+      
+      // Add click to load functionality
+      messageElement.addEventListener('click', () => {
+        loadHistoryToChat(index);
+      });
+      
+      historyItem.appendChild(messageElement);
+    });
+    
+    elements.historyList.appendChild(historyItem);
+  };
+
+  const loadHistoryToChat = (index) => {
+    elements.messages.innerHTML = '';
+    chatHistory.slice(0, index + 1).forEach(({ role, content }) => {
+      addMessage(content, role);
+    });
+    toggleMenu(false);
+  };
+
+  const clearHistory = () => {
+    if (confirm("Are you sure you want to clear all chat history?")) {
+      chatHistory = [];
+      elements.messages.innerHTML = "";
+      updateHistory();
+      localStorage.removeItem('chatHistory');
+    }
+  };
+
+  // ----------- Bot Simulation -----------
   const simulateBotReply = (userText) => {
     const botTyping = document.createElement("div");
-    botTyping.classList.add("message", "bot");
-    botTyping.textContent = "WAYNE AI is typing...";
-    messages.appendChild(botTyping);
-    messages.scrollTop = messages.scrollHeight;
+    botTyping.classList.add("message", "bot", "typing");
+    botTyping.innerHTML = `
+      <span class="sender-label">WAYNE AI:</span>
+      <div class="typing-indicator">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    `;
+    elements.messages.appendChild(botTyping);
+    scrollToBottom();
 
     setTimeout(() => {
       botTyping.remove();
-      const reply = "🤖 " + userText.split("").reverse().join("");
+      // More sophisticated bot response logic can go here
+      const reply = generateBotResponse(userText);
       addMessage(reply, "bot");
       chatHistory.push({ role: "bot", content: reply });
       updateHistory();
-    }, 800);
+      saveToLocalStorage();
+    }, 1500 + Math.random() * 1000); // Random delay for more natural feel
   };
 
-  // ----------- Clear History -----------
-  clearHistoryBtn.addEventListener("click", () => {
-    chatHistory = [];
-    messages.innerHTML = "";
-    updateHistory();
-  });
+  const generateBotResponse = (userText) => {
+    // Replace with actual AI integration or more sophisticated logic
+    const responses = [
+      `I understand you said: "${userText}". Can you tell me more?`,
+      `Interesting point about "${userText}". What else is on your mind?`,
+      `🤖 ${userText.split("").reverse().join("")}`,
+      `Thanks for sharing "${userText}". How can I help you further?`
+    ];
+    return responses[Math.floor(Math.random() * responses.length)];
+  };
 
-  // ----------- Menu Action Links -----------
-  document.querySelectorAll(".menu-action").forEach((btn) => {
-    const text = btn.textContent.toLowerCase();
-    if (text.includes("setting")) {
-      btn.addEventListener("click", () => (window.location.href = "setting.html"));
-    } else if (text.includes("about")) {
-      btn.addEventListener("click", () => (window.location.href = "about.html"));
+  // ----------- Navigation Handlers -----------
+  const setupNavigationListeners = () => {
+    document.querySelectorAll(".menu-action").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        const action = btn.dataset.action || btn.textContent.toLowerCase();
+        
+        if (action.includes("setting")) {
+          window.location.href = "settings.html";
+        } else if (action.includes("about")) {
+          window.location.href = "about.html";
+        } else if (action.includes("new chat")) {
+          if (chatHistory.length > 0 && !confirm("Start a new chat? Current chat will be saved in history.")) return;
+          elements.messages.innerHTML = "";
+          toggleMenu(false);
+        }
+      });
+    });
+  };
+
+  // ----------- Initialization -----------
+  const init = () => {
+    setupMenuListeners();
+    setupMessageListeners();
+    setupNavigationListeners();
+    
+    elements.clearHistoryBtn.addEventListener("click", clearHistory);
+    
+    // Load any existing history
+    updateHistory();
+    
+    // Focus input on load
+    elements.input.focus();
+    
+    // Show welcome message if no history
+    if (chatHistory.length === 0) {
+      setTimeout(() => {
+        addMessage("Hello! How can I help you today?", "bot");
+      }, 1000);
     }
-  });
+  };
+
+  init();
 });
