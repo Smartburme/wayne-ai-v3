@@ -7,9 +7,33 @@
   <link rel="stylesheet" href="../static/css/style.css">
 </head>
 <body class="bg">
+  
+  <!-- Side Menu -->
+  <aside id="sideMenu" class="side-menu">
+    <div class="menu-header">
+      <h2>Menu</h2>
+      <button id="closeMenuBtn" class="icon-btn">×</button>
+    </div>
+    <div class="menu-section">
+      <h3>History</h3>
+      <div id="historyList" class="history-list">
+        <p class="empty-history">No history yet.</p>
+      </div>
+    </div>
+    <div class="menu-section">
+      <button id="clearHistoryBtn" class="menu-action">🗑 Clear Chat</button>
+      <button id="settingsBtn" class="menu-action">⚙ Settings</button>
+      <button id="aboutBtn" class="menu-action">ℹ About</button>
+    </div>
+  </aside>
+
+  <!-- Overlay -->
+  <div id="overlay" class="overlay"></div>
+
+  <!-- Top Bar -->
   <header class="titlebar">
     <div class="left">
-      <button id="menuBtn" class="icon-btn">ミ</button>
+      <button id="menuBtn" class="icon-btn">☰</button>
     </div>
     <div class="title">WAYNE AI</div>
     <div class="right">
@@ -17,6 +41,7 @@
     </div>
   </header>
 
+  <!-- Chat Area -->
   <main class="chat-area" id="chatArea">
     <div class="messages" id="messages"></div>
     <div class="composer">
@@ -26,7 +51,7 @@
         <option value="code">Code</option>
       </select>
       <textarea id="input" placeholder="Type a message..." rows="1"></textarea>
-      <button id="sendBtn" class="send">ᐷ</button>
+      <button id="sendBtn" class="send">➤</button>
     </div>
   </main>
 
