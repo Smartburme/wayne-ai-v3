@@ -51,28 +51,6 @@ document.addEventListener("DOMContentLoaded", () => {
     scrollToBottom();
   };
 
-  // API ကနေ reply ရယူဖို့ async function
-  const fetchBotReply = async (userText) => {
-    try {
-      const response = await fetch('https://wayne-ai-v1.mysvm.workers.dev', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: userText })
-      });
-
-      if (!response.ok) {
-        throw new Error(`Server responded with status ${response.status}`);
-      }
-
-      const data = await response.json();
-      // API ရဲ့ format အပေါ်မူတည်ပြီး data.response, data.reply, etc ကိုပြောင်းပါ
-      return data.response || "Sorry, I couldn't get a response.";
-    } catch (error) {
-      console.error("Error fetching bot reply:", error);
-      return "Sorry, something went wrong. Please try again.";
-    }
-  };
-
   // Bot typing indicator ကို return လုပ်တဲ့ function
   const createBotTypingIndicator = () => {
     const botTyping = document.createElement("div");
@@ -86,13 +64,13 @@ document.addEventListener("DOMContentLoaded", () => {
     return botTyping;
   };
 
-  // Bot reply ကို API ကနေ ရယူပြီး UI တွေ update
+  // api.js မှ sendToBackend ကို သုံးပြီး Bot reply ရယူခြင်း
   const simulateBotReply = async (userText) => {
     const botTyping = createBotTypingIndicator();
     elements.messages.appendChild(botTyping);
     scrollToBottom();
 
-    const reply = await fetchBotReply(userText);
+    const reply = await sendToBackend(userText);
 
     botTyping.remove();
     addMessage(reply, "bot");
