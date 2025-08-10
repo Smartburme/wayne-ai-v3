@@ -1,17 +1,21 @@
-const API_BASE = "https://your-backend.example.com"; // <-- ပြောင်းပါ
+const API_BASE = "https://wayne-ai-v1.mysvm.workers.dev";
 
-async function sendToBackend(message, mode="text"){
-  try{
+async function sendToBackend(message, mode = "text") {
+  try {
     const res = await fetch(`${API_BASE}/api/chat`, {
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message, mode })
     });
-    if(!res.ok) throw new Error("Network response not ok");
+
+    if (!res.ok) throw new Error(`Network response not ok: ${res.status}`);
+
     const data = await res.json();
-    return data.reply ?? data; // expect {reply: "..."}
-  }catch(e){
+
+    // API မှာ { reply: "..." } return ပြန်တယ်ဆို assumption
+    return data.reply ?? JSON.stringify(data);
+  } catch (e) {
     console.error("API error", e);
-    return "Server error: " + e.message;
+    return `Server error: ${e.message}`;
   }
 }
