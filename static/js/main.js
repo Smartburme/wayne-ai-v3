@@ -1,5 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // DOM Elements
   const elements = {
     menuBtn: document.getElementById("menuBtn"),
     closeMenuBtn: document.getElementById("closeMenuBtn"),
@@ -12,10 +11,8 @@ document.addEventListener("DOMContentLoaded", () => {
     clearHistoryBtn: document.getElementById("clearHistoryBtn")
   };
 
-  // State
   let chatHistory = JSON.parse(localStorage.getItem('chatHistory')) || [];
 
-  // ----------- Utility Functions -----------
   const saveToLocalStorage = () => {
     localStorage.setItem('chatHistory', JSON.stringify(chatHistory));
   };
@@ -24,7 +21,6 @@ document.addEventListener("DOMContentLoaded", () => {
     elements.messages.scrollTop = elements.messages.scrollHeight;
   };
 
-  // ----------- Menu Controls -----------
   const toggleMenu = (show) => {
     elements.sideMenu.classList.toggle("active", show);
     elements.overlay.classList.toggle("active", show);
@@ -37,24 +33,72 @@ document.addEventListener("DOMContentLoaded", () => {
     elements.overlay.addEventListener("click", () => toggleMenu(false));
   };
 
-  // ----------- Message Handling -----------
   const addMessage = (text, sender) => {
     const messageElement = document.createElement("div");
     messageElement.classList.add("message", sender);
-    
-    // Add sender label for better UX
+
     const senderLabel = document.createElement("span");
     senderLabel.classList.add("sender-label");
     senderLabel.textContent = sender === 'user' ? 'You:' : 'WAYNE AI:';
-    
+
     const messageContent = document.createElement("div");
     messageContent.classList.add("message-content");
     messageContent.textContent = text;
-    
+
     messageElement.appendChild(senderLabel);
     messageElement.appendChild(messageContent);
     elements.messages.appendChild(messageElement);
     scrollToBottom();
+  };
+
+  // API ကနေ reply ရယူဖို့ async function
+  const fetchBotReply = async (userText) => {
+    try {
+      const response = await fetch('https://wayne-ai-v1.mysvm.workers.dev', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: userText })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server responded with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      // API ရဲ့ format အပေါ်မူတည်ပြီး data.response, data.reply, etc ကိုပြောင်းပါ
+      return data.response || "Sorry, I couldn't get a response.";
+    } catch (error) {
+      console.error("Error fetching bot reply:", error);
+      return "Sorry, something went wrong. Please try again.";
+    }
+  };
+
+  // Bot typing indicator ကို return လုပ်တဲ့ function
+  const createBotTypingIndicator = () => {
+    const botTyping = document.createElement("div");
+    botTyping.classList.add("message", "bot", "typing");
+    botTyping.innerHTML = `
+      <span class="sender-label">WAYNE AI:</span>
+      <div class="typing-indicator">
+        <span></span><span></span><span></span>
+      </div>
+    `;
+    return botTyping;
+  };
+
+  // Bot reply ကို API ကနေ ရယူပြီး UI တွေ update
+  const simulateBotReply = async (userText) => {
+    const botTyping = createBotTypingIndicator();
+    elements.messages.appendChild(botTyping);
+    scrollToBottom();
+
+    const reply = await fetchBotReply(userText);
+
+    botTyping.remove();
+    addMessage(reply, "bot");
+    chatHistory.push({ role: "bot", content: reply });
+    updateHistory();
+    saveToLocalStorage();
   };
 
   const sendMessage = () => {
@@ -80,32 +124,29 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
 
-  // ----------- Chat History Management -----------
   const updateHistory = () => {
     elements.historyList.innerHTML = "";
-    
+
     if (chatHistory.length === 0) {
       elements.historyList.innerHTML = "<p class='empty-history'>No history yet. Start chatting!</p>";
       return;
     }
 
-    // Group messages by conversation (optional enhancement)
     const historyItem = document.createElement("div");
     historyItem.className = "history-item";
-    
+
     chatHistory.forEach(({ role, content }, index) => {
       const messageElement = document.createElement("p");
       messageElement.className = `history-message ${role}`;
       messageElement.textContent = `${role === 'user' ? 'You:' : 'AI:'} ${content}`;
-      
-      // Add click to load functionality
+
       messageElement.addEventListener('click', () => {
         loadHistoryToChat(index);
       });
-      
+
       historyItem.appendChild(messageElement);
     });
-    
+
     elements.historyList.appendChild(historyItem);
   };
 
@@ -126,53 +167,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // ----------- Bot Simulation -----------
-  const simulateBotReply = (userText) => {
-    const botTyping = document.createElement("div");
-    botTyping.classList.add("message", "bot", "typing");
-    botTyping.innerHTML = `
-      <span class="sender-label">WAYNE AI:</span>
-      <div class="typing-indicator">
-        <span></span>
-        <span></span>
-        <span></span>
-      </div>
-    `;
-    elements.messages.appendChild(botTyping);
-    scrollToBottom();
-
-    setTimeout(() => {
-      botTyping.remove();
-      // More sophisticated bot response logic can go here
-      const reply = generateBotResponse(userText);
-      addMessage(reply, "bot");
-      chatHistory.push({ role: "bot", content: reply });
-      updateHistory();
-      saveToLocalStorage();
-    }, 1500 + Math.random() * 1000); // Random delay for more natural feel
-  };
-
-  const generateBotResponse = (userText) => {
-  // အသုံးပြုသူရဲ့စာကြောင်းကို အခြေခံပြီး သင့်တော်တဲ့အဖြေတွေထုတ်ပေးမယ်
-  const responses = [
-    `ကျေးဇူးပြု၍ "${userText}" အကြောင်း နည်းနည်းထပ်ရှင်းပြပေးပါဦး။`,
-    `"${userText}" နဲ့ပတ်သက်ပြီး စိတ်ဝင်စားစရာကောင်းပါတယ်။`,
-    `ဒီမေးခွန်းအတွက် အဖြေက - "${userText.split('').reverse().join('')}" (ပြောင်းပြန်လှန်ကြည့်ထားတာပါ)`,
-    `"${userText}" ဆိုတာ သိချင်နေတဲ့အကြောင်းအရာလား? ကျွန်တော်ကူညီနိုင်ပါတယ်။`,
-    `ကျွန်တော်နားလည်တာက "${userText}" ဆိုတာပါ။ တခြားမေးစရာရှိသေးလား?`
-  ];
-
-  // ကျပန်းအဖြေတစ်ခုကိုရွေးချယ်
-  return responses[Math.floor(Math.random() * responses.length)];
-};
-
-  // ----------- Navigation Handlers -----------
   const setupNavigationListeners = () => {
     document.querySelectorAll(".menu-action").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.preventDefault();
         const action = btn.dataset.action || btn.textContent.toLowerCase();
-        
+
         if (action.includes("setting")) {
           window.location.href = "settings.html";
         } else if (action.includes("about")) {
@@ -186,21 +186,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
 
-  // ----------- Initialization -----------
   const init = () => {
     setupMenuListeners();
     setupMessageListeners();
     setupNavigationListeners();
-    
+
     elements.clearHistoryBtn.addEventListener("click", clearHistory);
-    
-    // Load any existing history
+
     updateHistory();
-    
-    // Focus input on load
     elements.input.focus();
-    
-    // Show welcome message if no history
+
     if (chatHistory.length === 0) {
       setTimeout(() => {
         addMessage("Hello! How can I help you today?", "bot");
