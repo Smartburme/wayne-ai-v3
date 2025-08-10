@@ -11,6 +11,16 @@ document.addEventListener("DOMContentLoaded", () => {
     clearHistoryBtn: document.getElementById("clearHistoryBtn"),
   };
 
+  const API_CONFIG = {
+    endpoint: "https://wayne-ai-v1.mysvm.workers.dev/api/chat",
+    retries: 3,
+    timeout: 10000,
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+  };
+
   let chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
 
   const saveToLocalStorage = () => {
@@ -64,16 +74,42 @@ document.addEventListener("DOMContentLoaded", () => {
     return botTyping;
   };
 
-  // https://wayne-ai-v1.mysvm.workers.dev ကို POST API call
+  // fetch with retry & timeout helper function
+  const fetchWithTimeoutAndRetry = async (url, options, retries, timeout) => {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeout);
+
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(id);
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return response;
+      } catch (error) {
+        if (attempt === retries) throw error;
+        // retry after a short delay
+        await new Promise((res) => setTimeout(res, 500));
+      }
+    }
+  };
+
+  // API call to backend with retries & timeout
   const sendToBackend = async (message, mode = "text") => {
     try {
-      const res = await fetch("https://wayne-ai-v1.mysvm.workers.dev/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, mode }),
-      });
-
-      if (!res.ok) throw new Error(`Network response not ok: ${res.status}`);
+      const res = await fetchWithTimeoutAndRetry(
+        API_CONFIG.endpoint,
+        {
+          method: "POST",
+          headers: API_CONFIG.headers,
+          body: JSON.stringify({ message, mode }),
+        },
+        API_CONFIG.retries,
+        API_CONFIG.timeout
+      );
 
       const data = await res.json();
       return data.reply ?? "No reply from server";
