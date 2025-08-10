@@ -1,0 +1,7 @@
+{
+  "name": "wayne-ai-v3",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "echo \"No build step defined\""
+  }
+}
