@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const elements = {
+  const el = {
     menuBtn: document.getElementById("menuBtn"),
     closeMenuBtn: document.getElementById("closeMenuBtn"),
     sideMenu: document.getElementById("sideMenu"),
@@ -11,234 +11,153 @@ document.addEventListener("DOMContentLoaded", () => {
     clearHistoryBtn: document.getElementById("clearHistoryBtn"),
   };
 
-  const API_CONFIG = {
-    endpoint: "https://wayne-ai-v1.mysvm.workers.dev/api/chat",
+  const API = {
+    endpoint: "https://smartburme.github.io/wayne-ai-v3/api/chat", // 🔹 change to your worker endpoint if needed
     retries: 3,
     timeout: 10000,
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
   };
 
-  let chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || [];
+  let history = JSON.parse(localStorage.getItem("chatHistory")) || [];
 
-  const saveToLocalStorage = () => {
-    localStorage.setItem("chatHistory", JSON.stringify(chatHistory));
-  };
-
-  const scrollToBottom = () => {
-    elements.messages.scrollTop = elements.messages.scrollHeight;
-  };
-
+  const saveHistory = () => localStorage.setItem("chatHistory", JSON.stringify(history));
+  const scrollBottom = () => el.messages.scrollTop = el.messages.scrollHeight;
   const toggleMenu = (show) => {
-    elements.sideMenu.classList.toggle("active", show);
-    elements.overlay.classList.toggle("active", show);
+    el.sideMenu.classList.toggle("active", show);
+    el.overlay.classList.toggle("active", show);
     document.body.style.overflow = show ? "hidden" : "";
   };
 
-  const setupMenuListeners = () => {
-    elements.menuBtn.addEventListener("click", () => toggleMenu(true));
-    elements.closeMenuBtn.addEventListener("click", () => toggleMenu(false));
-    elements.overlay.addEventListener("click", () => toggleMenu(false));
+  const msgUI = (text, sender) => {
+    const wrap = document.createElement("div");
+    wrap.className = `message ${sender}`;
+    wrap.innerHTML = `<span class="sender-label">${sender === "user" ? "You:" : "WAYNE AI:"}</span>
+                      <div class="message-content">${text}</div>`;
+    el.messages.appendChild(wrap);
+    scrollBottom();
   };
 
-  const addMessage = (text, sender) => {
-    const messageElement = document.createElement("div");
-    messageElement.classList.add("message", sender);
-
-    const senderLabel = document.createElement("span");
-    senderLabel.classList.add("sender-label");
-    senderLabel.textContent = sender === "user" ? "You:" : "WAYNE AI:";
-
-    const messageContent = document.createElement("div");
-    messageContent.classList.add("message-content");
-    messageContent.textContent = text;
-
-    messageElement.appendChild(senderLabel);
-    messageElement.appendChild(messageContent);
-    elements.messages.appendChild(messageElement);
-    scrollToBottom();
+  const botTypingUI = () => {
+    const div = document.createElement("div");
+    div.className = "message bot typing";
+    div.innerHTML = `<span class="sender-label">WAYNE AI:</span>
+                     <div class="typing-indicator"><span></span><span></span><span></span></div>`;
+    return div;
   };
 
-  // Bot typing indicator ကို return လုပ်တဲ့ function
-  const createBotTypingIndicator = () => {
-    const botTyping = document.createElement("div");
-    botTyping.classList.add("message", "bot", "typing");
-    botTyping.innerHTML = `
-      <span class="sender-label">WAYNE AI:</span>
-      <div class="typing-indicator">
-        <span></span><span></span><span></span>
-      </div>
-    `;
-    return botTyping;
-  };
-
-  // fetch with retry & timeout helper function
-  const fetchWithTimeoutAndRetry = async (url, options, retries, timeout) => {
-    for (let attempt = 0; attempt <= retries; attempt++) {
+  const fetchRetry = async (url, opts, retries, timeout) => {
+    for (let i = 0; i <= retries; i++) {
       try {
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), timeout);
-
-        const response = await fetch(url, { ...options, signal: controller.signal });
-        clearTimeout(id);
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        return response;
-      } catch (error) {
-        if (attempt === retries) throw error;
-        // retry after a short delay
-        await new Promise((res) => setTimeout(res, 500));
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), timeout);
+        const res = await fetch(url, { ...opts, signal: ctrl.signal });
+        clearTimeout(t);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res;
+      } catch (err) {
+        if (i === retries) throw err;
+        await new Promise(r => setTimeout(r, 500));
       }
     }
   };
 
-  // API call to backend with retries & timeout
-  const sendToBackend = async (message, mode = "text") => {
+  const sendBackend = async (message, mode = "text") => {
     try {
-      const res = await fetchWithTimeoutAndRetry(
-        API_CONFIG.endpoint,
-        {
-          method: "POST",
-          headers: API_CONFIG.headers,
-          body: JSON.stringify({ message, mode }),
-        },
-        API_CONFIG.retries,
-        API_CONFIG.timeout
+      const res = await fetchRetry(
+        API.endpoint,
+        { method: "POST", headers: API.headers, body: JSON.stringify({ message, mode }) },
+        API.retries,
+        API.timeout
       );
-
       const data = await res.json();
-      return data.reply ?? "No reply from server";
+      return data.reply || "No reply from server";
     } catch (e) {
-      console.error("API error", e);
+      console.error(e);
       return `Server error: ${e.message}`;
     }
   };
 
-  // Bot reply ကို API ကနေ ရယူပြီး UI update
-  const simulateBotReply = async (userText) => {
-    const botTyping = createBotTypingIndicator();
-    elements.messages.appendChild(botTyping);
-    scrollToBottom();
+  const botReply = async (text) => {
+    const typing = botTypingUI();
+    el.messages.appendChild(typing);
+    scrollBottom();
 
-    const reply = await sendToBackend(userText);
-
-    botTyping.remove();
-    addMessage(reply, "bot");
-    chatHistory.push({ role: "bot", content: reply });
+    const reply = await sendBackend(text);
+    typing.remove();
+    msgUI(reply, "bot");
+    history.push({ role: "bot", content: reply });
     updateHistory();
-    saveToLocalStorage();
+    saveHistory();
   };
 
-  const sendMessage = () => {
-    const text = elements.input.value.trim();
+  const sendMsg = () => {
+    const text = el.input.value.trim();
     if (!text) return;
-
-    addMessage(text, "user");
-    chatHistory.push({ role: "user", content: text });
+    msgUI(text, "user");
+    history.push({ role: "user", content: text });
     updateHistory();
-    saveToLocalStorage();
-
-    elements.input.value = "";
-    simulateBotReply(text);
-  };
-
-  const setupMessageListeners = () => {
-    elements.sendBtn.addEventListener("click", sendMessage);
-    elements.input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
-    });
+    saveHistory();
+    el.input.value = "";
+    botReply(text);
   };
 
   const updateHistory = () => {
-    elements.historyList.innerHTML = "";
+    el.historyList.innerHTML = history.length
+      ? ""
+      : "<p class='empty-history'>No history yet. Start chatting!</p>";
+    if (!history.length) return;
 
-    if (chatHistory.length === 0) {
-      elements.historyList.innerHTML =
-        "<p class='empty-history'>No history yet. Start chatting!</p>";
-      return;
-    }
-
-    const historyItem = document.createElement("div");
-    historyItem.className = "history-item";
-
-    chatHistory.forEach(({ role, content }, index) => {
-      const messageElement = document.createElement("p");
-      messageElement.className = `history-message ${role}`;
-      messageElement.textContent = `${role === "user" ? "You:" : "AI:"} ${content}`;
-
-      messageElement.addEventListener("click", () => {
-        loadHistoryToChat(index);
+    const box = document.createElement("div");
+    box.className = "history-item";
+    history.forEach(({ role, content }, idx) => {
+      const p = document.createElement("p");
+      p.className = `history-message ${role}`;
+      p.textContent = `${role === "user" ? "You:" : "AI:"} ${content}`;
+      p.addEventListener("click", () => {
+        el.messages.innerHTML = "";
+        history.slice(0, idx + 1).forEach(({ role, content }) => msgUI(content, role));
+        toggleMenu(false);
       });
-
-      historyItem.appendChild(messageElement);
+      box.appendChild(p);
     });
-
-    elements.historyList.appendChild(historyItem);
-  };
-
-  const loadHistoryToChat = (index) => {
-    elements.messages.innerHTML = "";
-    chatHistory.slice(0, index + 1).forEach(({ role, content }) => {
-      addMessage(content, role);
-    });
-    toggleMenu(false);
-  };
-
-  const clearHistory = () => {
-    if (confirm("Are you sure you want to clear all chat history?")) {
-      chatHistory = [];
-      elements.messages.innerHTML = "";
-      updateHistory();
-      localStorage.removeItem("chatHistory");
-    }
-  };
-
-  const setupNavigationListeners = () => {
-    document.querySelectorAll(".menu-action").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        const action = btn.dataset.action || btn.textContent.toLowerCase();
-
-        if (action.includes("setting")) {
-          window.location.href = "settings.html";
-        } else if (action.includes("about")) {
-          window.location.href = "about.html";
-        } else if (action.includes("new chat")) {
-          if (
-            chatHistory.length > 0 &&
-            !confirm("Start a new chat? Current chat will be saved in history.")
-          )
-            return;
-          elements.messages.innerHTML = "";
-          toggleMenu(false);
-        }
-      });
-    });
+    el.historyList.appendChild(box);
   };
 
   const init = () => {
-    setupMenuListeners();
-    setupMessageListeners();
-    setupNavigationListeners();
-
-    elements.clearHistoryBtn.addEventListener("click", clearHistory);
-
+    el.menuBtn.onclick = () => toggleMenu(true);
+    el.closeMenuBtn.onclick = () => toggleMenu(false);
+    el.overlay.onclick = () => toggleMenu(false);
+    el.sendBtn.onclick = sendMsg;
+    el.input.onkeydown = e => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMsg();
+      }
+    };
+    el.clearHistoryBtn.onclick = () => {
+      if (confirm("Clear all chat history?")) {
+        history = [];
+        el.messages.innerHTML = "";
+        localStorage.removeItem("chatHistory");
+        updateHistory();
+      }
+    };
+    document.querySelectorAll(".menu-action").forEach(btn =>
+      btn.onclick = e => {
+        e.preventDefault();
+        const act = btn.dataset.action || btn.textContent.toLowerCase();
+        if (act.includes("setting")) location.href = "settings.html";
+        else if (act.includes("about")) location.href = "about.html";
+        else if (act.includes("new chat")) {
+          if (history.length && !confirm("Start a new chat?")) return;
+          el.messages.innerHTML = "";
+          toggleMenu(false);
+        }
+      }
+    );
     updateHistory();
-    elements.input.focus();
-
-    if (chatHistory.length === 0) {
-      setTimeout(() => {
-        addMessage("Hello! How can I help you today?", "bot");
-      }, 1000);
-    }
+    el.input.focus();
+    if (!history.length) setTimeout(() => msgUI("Hello! How can I help you today?", "bot"), 800);
   };
 
   init();
