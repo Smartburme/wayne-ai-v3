@@ -1,4 +1,4 @@
-const API_BASE = "https://wayne-ai-v1.mysvm.workers.dev";
+const API_BASE = "https://morning-cell-1282.mysvm.workers.dev";
 
 async function sendToBackend(message, mode = "text") {
   try {
