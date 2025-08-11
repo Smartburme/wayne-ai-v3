@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const API = {
-    endpoint: "https://smartburme.github.io/wayne-ai-v3/api/chat", // 🔹 change to your worker endpoint if needed
+    endpoint: "https://wayne-ai-v1.mysvm.workers.dev/api/chat", // 🔹 change to your worker endpoint if needed
     retries: 3,
     timeout: 10000,
     headers: { "Content-Type": "application/json", Accept: "application/json" },
